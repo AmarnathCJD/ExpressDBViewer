@@ -65,7 +65,6 @@ function EntitiesDashboard() {
 
   useEffect(() => {
     setIsLoading(true);
-    setLoadingScreenModal(true);
     getTableNames();
   }, []);
 
@@ -83,7 +82,6 @@ function EntitiesDashboard() {
 
   function updateTable(tableName: string) {
     setIsLoading(true);
-    setLoadingScreenModal(true);
     fetch(`${BACK_END_URL}/${tableName}`)
       .then((response) => response.json())
       .then((data) => {
@@ -210,6 +208,8 @@ function EntitiesDashboard() {
       datas[element.textContent || ""] = qsData[index].value;
     });
 
+    setIsLoading(true);
+
     fetch(addEndpoint, {
       method: "POST",
       body: JSON.stringify(addModalData),
@@ -219,6 +219,7 @@ function EntitiesDashboard() {
     }).then((response) => {
       if (response.status === 500) {
         response.json().then((data) => {
+          setIsLoading(false);
           setAlertMessage(data.error);
           setShowAlert(true);
           setTimeout(() => {
@@ -226,6 +227,7 @@ function EntitiesDashboard() {
           }, 10000);
         });
       } else {
+        setIsLoading(false);
         setAlertMessage("Entity updated successfully");
         setShowAlertSuccess(true);
         setTimeout(() => {
@@ -241,6 +243,7 @@ function EntitiesDashboard() {
     const query = document.getElementById("query") as HTMLInputElement;
     const queryValue = query.value;
     const queryUrl = `${BACK_END_URL}/sqlquery`;
+    setIsLoading(true);
 
     fetch(queryUrl, {
       method: "POST",
@@ -250,6 +253,7 @@ function EntitiesDashboard() {
       }
     }).then((response) => {
       if (response.status === 500) {
+        setIsLoading(false);
         response.json().then((data) => {
           setAlertMessage(data.error);
           setShowAlert(true);
@@ -259,6 +263,7 @@ function EntitiesDashboard() {
         });
       } else {
         response.json().then((data) => {
+          setIsLoading(false);
           setTableData(data);
           setAlertMessage("Query executed successfully");
           setShowAlertSuccess(true);
@@ -318,16 +323,7 @@ function EntitiesDashboard() {
             </div>
 
             <div className="flex space-x-4">
-              {showAlert && (
-                <Alert color="failure" className="px-4 py-2" icon={HiInformationCircle}>
-                  <span className="font-medium">{alertMessage}</span>
-                </Alert>
-              )}
-              {showAlertSuccess && (
-                <Alert color="success" className="px-4 py-2" icon={HiInformationCircle}>
-                  <span className="font-medium">{alertMessage}</span>
-                </Alert>
-              )}
+
               <Popover
                 aria-labelledby="area-popover"
                 open={open}
@@ -372,8 +368,18 @@ function EntitiesDashboard() {
               </Popover>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            {loadingScreenModal && (
+          <div className="overflow-x-auto space-y-2">
+            {showAlert && (
+              <Alert color="failure" className="px-4 py-2" icon={HiInformationCircle}>
+                <span className="font-medium">{alertMessage}</span>
+              </Alert>
+            )}
+            {showAlertSuccess && (
+              <Alert color="success" className="px-4 py-2" icon={HiInformationCircle}>
+                <span className="font-medium">{alertMessage}</span>
+              </Alert>
+            )}
+            {loadingScreenModal && false && (
               <Modal className="bg-transparent rounded-lg" show={loadingScreenModal} size="md" onClose={() => setLoadingScreenModal(false)}>
                 <Modal.Body className="mt-8 bg-transparent">
                   <div className="text-center">
