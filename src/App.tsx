@@ -3,14 +3,14 @@
 /* eslint-disable tailwindcss/classnames-order */
 import React, { useState, useEffect } from "react";
 import { Button, Label, Modal, TextInput, Spinner, Popover, Textarea, Alert } from "flowbite-react";
-import { infoAdd, infoDelete, infoEdit } from "./Const";
-import { HiOutlineExclamationCircle, HiInformationCircle } from "react-icons/hi";
+import { infoAdd, infoEdit, searchInfo } from "./Const";
+import { HiOutlineExclamationCircle, HiInformationCircle, HiSearchCircle } from "react-icons/hi";
 
 function isObject(value: any) {
   return typeof value === "object" && value !== null;
 }
 
-const BACK_END_URL = "https://db-express.onrender.com"
+const BACK_END_URL = process.env.REACT_APP_BACKEND_URL || "https://db-express.onrender.com";
 
 function EntitiesDashboard() {
   const [tableNames, setTableNames] = useState([]);
@@ -37,7 +37,16 @@ function EntitiesDashboard() {
 
   const [showAlertSuccess, setShowAlertSuccess] = useState(false);
 
-  const [open, setOpen] = useState(false);
+  const [showQueryBox, setShowQueryBox] = useState(false);
+
+  function handleSearch() {
+    setShowQueryBox(true);
+    setTimeout(() => {
+      const query = document.getElementById("query") as HTMLInputElement;
+      query.focus();
+      query.value = `SELECT * FROM ${selectedTableName} WHERE `;
+    }, 500);
+  }
 
   function handleEdit() {
     if (selectedRow === -1) {
@@ -63,11 +72,6 @@ function EntitiesDashboard() {
     setOpenModal(true);
   }
 
-  useEffect(() => {
-    setIsLoading(true);
-    getTableNames();
-  }, []);
-
   function getTableNames() {
     fetch(BACK_END_URL)
       .then((response) => response.json())
@@ -79,6 +83,17 @@ function EntitiesDashboard() {
         updateTable(data[0]);
       });
   }
+
+  function handleSQLButton() {
+    setShowQueryBox(!showQueryBox);
+  }
+
+
+  useEffect(() => {
+    setIsLoading(true);
+    getTableNames();
+  }, []);
+
 
   function updateTable(tableName: string) {
     setIsLoading(true);
@@ -284,6 +299,8 @@ function EntitiesDashboard() {
     updateTable(selectedTableName);
   }
 
+
+
   return (
     <div className="p-4 sm:p-8 lg:p-12">
       <div className="mx-auto w-full max-w-8xl overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-800">
@@ -323,49 +340,30 @@ function EntitiesDashboard() {
             </div>
 
             <div className="flex space-x-4">
-
-              <Popover
-                aria-labelledby="area-popover"
-                open={open}
-                onOpenChange={setOpen}
-                content={
-                  <div className="flex w-64 flex-col gap-4 p-4 text-sm text-gray-500 dark:text-gray-400">
-                    <div>
-                      <h2 id="area-popover" className="text-base text-gray-500">SQL Query</h2>
-                      <div className="mb-2 block">
-                        <Label htmlFor="query" value="type your query" />
-                      </div>
-                      <Textarea id="query" className="font-mono" required rows={4} placeholder="SELECT * FROM table_name" />
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button color="gray">Cancel</Button>
-                      <Button color="success" onClick={() => handleSqlQuery()}>
-                        Execute
-                      </Button>
-                    </div>
-                  </div>
-                }
-              >
-                <button className="rounded bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600">
+              <div className="flex flex-wrap">
+                <button onClick={() => handleSQLButton()} className="rounded bg-yellow-500 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-600 mb-2 mr-2">
                   Raw Query
                 </button>
-              </Popover>
-              <Popover content={infoAdd} trigger="hover">
-                <button className="rounded bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600" onClick={handleAdd}>
-                  Add Entity
+                <Popover content={infoAdd} trigger="hover">
+                  <button className="rounded bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 mb-2 mr-2" onClick={handleAdd}>
+                    Add
+                  </button>
+                </Popover>
+                <Popover content={searchInfo} trigger="hover">
+                  <button className="rounded bg-cyan-500 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-600 mb-2 mr-2" onClick={() => handleSearch()}>
+                    <HiSearchCircle className="inline-block mr-2" />
+                    Search
+                  </button>
+                </Popover>
+                <button className="rounded bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 mb-2 mr-2" onClick={() => handleDelete()}>
+                  Delete
                 </button>
-              </Popover>
-
-              <button className="rounded bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600" onClick={() => handleDelete()}>
-                Delete Entity
-              </button>
-
-              <Popover content={infoEdit} trigger="hover">
-                <button className="rounded bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600" onClick={handleEdit}>
-                  Edit Entity
-                </button>
-              </Popover>
+                <Popover content={infoEdit} trigger="hover">
+                  <button className="rounded bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600 mb-2 mr-2" onClick={handleEdit}>
+                    Edit
+                  </button>
+                </Popover>
+              </div>
             </div>
           </div>
           <div className="overflow-x-auto space-y-2">
@@ -379,6 +377,22 @@ function EntitiesDashboard() {
                 <span className="font-medium">{alertMessage}</span>
               </Alert>
             )}
+            {showQueryBox && (<div className="flex w-full flex-col gap-4 p-4 text-sm text-gray-500 dark:text-gray-400">
+              <div>
+                <h2 id="area-popover" className="text-base text-gray-500">SQL Query</h2>
+                <div className="mb-2 block">
+                  <Label htmlFor="query" value="type your query" />
+                </div>
+                <Textarea id="query" className="font-mono" required rows={4} placeholder="SELECT * FROM table_name" />
+              </div>
+
+              <div className="flex gap-2">
+                <Button color="red" onClick={() => setShowQueryBox(false)}>Close</Button>
+                <Button color="success" onClick={() => handleSqlQuery()}>
+                  Execute
+                </Button>
+              </div>
+            </div>)}
             {loadingScreenModal && false && (
               <Modal className="bg-transparent rounded-lg" show={loadingScreenModal} size="md" onClose={() => setLoadingScreenModal(false)}>
                 <Modal.Body className="mt-8 bg-transparent">
